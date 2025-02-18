@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perspective.js Data Explorer</title>
+    <script type="module">
+        import perspective from "https://unpkg.com/@finos/perspective@1.6.1/dist/cdn/perspective.js";
+        import "https://unpkg.com/@finos/perspective-viewer@1.6.1/dist/cdn/perspective-viewer.js";
+		 window.perspective = perspective;
+    </script>
+</head>
+<body>
+    <h1>Perspective.js Data Explorer</h1>
+    <p>Dataset URL: <span id="datasetUrl">Nessun dataset fornito</span></p>
+    <perspective-viewer id="viewer"></perspective-viewer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const datasetUrl = urlParams.get("dataset");
+
+            if (!datasetUrl) {
+                document.getElementById("datasetUrl").innerText = "Nessun dataset fornito";
+                return;
+            }
+
+            document.getElementById("datasetUrl").innerText = datasetUrl;
+
+            try {
+                const response = await fetch(datasetUrl);
+                const csvText = await response.text();
+                
+                const worker = await perspective.worker();
+                const table = await worker.table(csvText);
+                
+                const viewer = document.getElementById("viewer");
+                viewer.load(table);
+                viewer.setAttribute("view", "grid");
+                viewer.setAttribute("row-pivots", '["Category"]');
+                viewer.setAttribute("column-pivots", '["Date"]');
+                viewer.setAttribute("aggregates", JSON.stringify({
+                    Sales: "sum",
+                    Profit: "avg"
+                }));
+            } catch (error) {
+                console.error("Errore nel caricamento del dataset:", error);
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
